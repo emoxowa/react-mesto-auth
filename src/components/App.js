@@ -1,15 +1,29 @@
 
 import React, { useState, useEffect } from "react";
+import { Route, Switch, useHistory, Redirect } from "react-router-dom";
+
 import Header from "./Header";
 import Main from "./Main";
 import Footer from "./Footer";
 import ImagePopup from "./ImagePopup";
+
 import { api } from "../utils/Api";
+import * as auth from "../utils/auth.js";
+
 import CurrentUserContext from "../contexts/CurrentUserContext";
+
 import EditProfilePopup from "./EditProfilePopup";
 import EditAvatarPopup from "./EditAvatarPopup";
 import AddPlacePopup from "./AddPlacePopup";
 import DeleteCardPopup from "./DeleteCardPopup";
+
+import Login from "./Login";
+import Register from "./Register";
+import ProtectedRoute from "./ProtectedRoute";
+import InfoTooltip from "./InfoTooltip";
+
+import successIcon from '../images/successIcon.png'
+import failIcon from '../images/failIcon.png'
 
 function App() {
   const [isEditAvatarPopupOpen, setIsPopupAvatarOpen] = useState(false);
@@ -17,33 +31,18 @@ function App() {
   const [isAddPlacePopupOpen, setIsPopupAddPlaceOpen] = useState(false);
   const [isImagePopupOpen, setImagePopupOpen] = useState(false);
   const [isDeleteCardPopupOpen, setDeleteCardPopupOpen] = useState(false);
+  const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
 
   const [selectedCard, setSelectedCard] = useState({});
   const [currentUser, setCurrentUser] = useState({});
   const [cards, setCards] = useState([]);
   const [cardDelete, setCardDelete] = useState({});
 
-    useEffect(() => {
-      api
-        .getInitialCardsFromServer()
-        .then((dataCards) => {
-          setCards(dataCards);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }, []);
-  
-    useEffect(() => {
-      api
-        .getUserInfoFromServer()
-        .then((res) => {
-          setCurrentUser(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    }, []);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [userData, setUserData] = useState("");
+  const [dataInfoTool, setDataInfoTool] = useState({ title: "", icon: "", });
+
+  const history = useHistory();
 
   function handleEditAvatarClick() {
     setIsPopupAvatarOpen(true);
@@ -62,19 +61,14 @@ function App() {
     setCardDelete(card);
   }
 
-  function closeAllPopups() {
-    setIsPopupAvatarOpen(false);
-    setIsPopupProfileOpen(false);
-    setIsPopupAddPlaceOpen(false);
-    setImagePopupOpen(false);
-    setSelectedCard(false);
-    setDeleteCardPopupOpen(false);
-  }
-
   const handleCardClick = (card) => {
     setImagePopupOpen(true);
     setSelectedCard(card);
   };
+
+  function handleInfoTooltipOpen() {
+    setIsInfoTooltipOpen(true);
+  }
 
   function handleCardLike(card) {
     // Снова проверяем, есть ли уже лайк на этой карточке
@@ -86,7 +80,7 @@ function App() {
       .then((newCard) => {
       setCards((state) => state.map((c) => (c._id === card._id ? newCard : c)));
     })
-      .catch((err) => { console.log(err) })
+      .catch((err) => { console.log(`Error ${err}`); })
   } 
 
   function handleCardDelete(card) {
@@ -96,7 +90,7 @@ function App() {
         setCards((state) => state.filter((c) => c._id !== card._id));
         closeAllPopups();
     })
-      .catch((err) => { console.log(err) })
+      .catch((err) => { console.log(`Error ${err}`); })
   }
 
   function handleUpdateUser({ name, job }) {
@@ -107,7 +101,7 @@ function App() {
         closeAllPopups();
       })
       .catch((err) => {
-        console.log(err);
+        console.log(`Error ${err}`);
       });
   }
 
@@ -118,7 +112,7 @@ function App() {
          setCurrentUser(res);
          closeAllPopups();
        })
-       .catch((err) => console.log(err));
+       .catch((err) => console.log(`Error ${err}`));
    }
 
     function handleAddPlaceSubmit({ name, link }) {
@@ -128,22 +122,137 @@ function App() {
           setCards([newCard, ...cards]);
           closeAllPopups();
         })
-        .catch((err) => console.log(err));
+        .catch((err) => console.log(`Error ${err}`));
     }
   
+
+  function handleRegister(email, password) {
+    auth
+      .register(email, password)
+      .then((data) => {
+        history.push("/sign-in");
+        setDataInfoTool({
+          title: "Вы успешно зарегистрировались!",
+          icon: successIcon,
+        });
+        handleInfoTooltipOpen();
+      })
+      .catch((err) => {
+        console.error(`Error ${err}`);
+        setDataInfoTool({
+          title: "Что-то пошло не так! Попробуйте ещё раз.",
+          icon: failIcon,
+        });
+        handleInfoTooltipOpen();
+      });
+  }
+  
+  function handleLogin(email, password) {
+    auth
+      .authorize(email, password)
+      .then((data) => {
+        setUserData(email);
+        localStorage.setItem("token", data.token);
+        setLoggedIn(true);
+        history.push("/");
+      })
+      .catch((err) => {
+        setDataInfoTool({
+          title: "Что-то пошло не так! Попробуйте ещё раз.",
+          icon: failIcon,
+        });
+        console.error(`Error ${err}`);
+        handleInfoTooltipOpen();
+      });
+  }
+
+  function closeAllPopups() {
+    setIsPopupAvatarOpen(false);
+    setIsPopupProfileOpen(false);
+    setIsPopupAddPlaceOpen(false);
+    setImagePopupOpen(false);
+    setSelectedCard(false);
+    setDeleteCardPopupOpen(false);
+    setIsInfoTooltipOpen(false);
+  }
+
+  function signOut() {
+    setLoggedIn(false);
+    setUserData("");
+    localStorage.removeItem("token");
+    history.push("/sign-in");
+  }
+  
+function checkToken() {
+  const token = localStorage.getItem("token");
+  if (token) {
+    auth
+      .getContent(token)
+      .then((res) => {
+        if (res) {
+          setLoggedIn(true);
+          setUserData(res.data.email);
+          history.push("/");
+        } else {
+          setDataInfoTool({
+            title: "Что-то пошло не так! Попробуйте ещё раз.",
+            icon: failIcon,
+          });
+          handleInfoTooltipOpen();
+        }
+      })
+      .catch((err) => console.log(`Error ${err}`));
+  }
+  }
+
+ useEffect(() => {
+    checkToken();
+    
+    const promises = [
+      api.getUserInfoFromServer(),
+      api.getInitialCardsFromServer(),
+    ];
+
+    Promise.all(promises)
+      .then(([user, dataCards]) => {
+        setCurrentUser(user);
+        setCards(dataCards);
+      })
+      .catch((err) => console.log(`Error ${err}`));
+  },[])
+
   return (
     <div className="page">
       <CurrentUserContext.Provider value={currentUser}>
-        <Header />
-        <Main
-          onEditAvatar={handleEditAvatarClick}
-          onEditProfile={handleEditProfileClick}
-          onAddPlace={handleAddPlaceClick}
-          onCardClick={handleCardClick}
-          onCardLike={handleCardLike}
-          onCardDelete={handleDeleteCardClick}
-          cards={cards}
-        />
+        <Header headerEmail={userData} signOut={signOut} />
+        <Switch>
+          <ProtectedRoute
+            exact
+            path="/"
+            loggedIn={loggedIn}
+            component={Main}
+            onEditAvatar={handleEditAvatarClick}
+            onEditProfile={handleEditProfileClick}
+            onAddPlace={handleAddPlaceClick}
+            onCardClick={handleCardClick}
+            onCardLike={handleCardLike}
+            onCardDelete={handleDeleteCardClick}
+            cards={cards}
+          ></ProtectedRoute>
+
+          <Route path="/sign-up">
+            <Register handleRegister={handleRegister} />
+          </Route>
+
+          <Route path="/sign-in">
+            <Login handleLogin={handleLogin} />
+          </Route>
+
+          <Route>
+            {loggedIn ? <Redirect to="/" /> : <Redirect to="/sign-in" />}
+          </Route>
+
+        </Switch>
         <Footer />
 
         <EditAvatarPopup
@@ -175,6 +284,13 @@ function App() {
           card={selectedCard}
           isOpen={isImagePopupOpen}
           onClose={closeAllPopups}
+        />
+
+        <InfoTooltip
+          isOpen={isInfoTooltipOpen}
+          onClose={closeAllPopups}
+          title={dataInfoTool.title}
+          icon={dataInfoTool.icon}
         />
       </CurrentUserContext.Provider>
     </div>
