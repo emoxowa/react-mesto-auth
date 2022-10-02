@@ -17,19 +17,15 @@ import logo from "../images/Logo.svg";
         </Route>
 
         <Route exact path="/sign-in">
-          <div>
-            <Link to="/sign-up" className="header__sign">
-              Регистрация
-            </Link>
-          </div>
+          <Link to="/sign-up" className="header__sign">
+            Регистрация
+          </Link>
         </Route>
 
         <Route path="/sign-up">
-          <div>
-            <Link to="/sign-in" className="header__sign">
-              Войти
-            </Link>
-          </div>
+          <Link to="/sign-in" className="header__sign">
+            Войти
+          </Link>
         </Route>
       </header>
     );

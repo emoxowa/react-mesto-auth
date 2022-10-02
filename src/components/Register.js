@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
  function Register({ handleRegister }) {
    const [email, setEmail] = useState("");
    const [password, setPassword] = useState("");
+
+   useEffect(() => {
+     resetForm();
+   }, []);
 
    function handleChange(evt) {
      if (evt.target.name === "Email") {
@@ -21,7 +25,6 @@ import { Link } from "react-router-dom";
    function handleSubmit(evt) {
      evt.preventDefault();
      handleRegister(email, password);
-     resetForm();
    }
 
    return (
@@ -31,7 +34,6 @@ import { Link } from "react-router-dom";
          className="sign__form"
          action="#"
          name="sign-form"
-         noValidate
          onSubmit={handleSubmit}
        >
          <input

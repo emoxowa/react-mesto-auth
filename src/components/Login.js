@@ -1,9 +1,13 @@
-import React, {useState} from "react";
+import React, { useState, useEffect } from "react";
 
 function Login({ handleLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+   useEffect(() => {
+     resetForm();
+   }, []);
+  
   function handleChange(evt) {
     if (evt.target.name === "Email") {
       setEmail(evt.target.value);
@@ -20,7 +24,6 @@ function Login({ handleLogin }) {
   function handleSubmit(evt) {
     evt.preventDefault();
     handleLogin(email, password);
-    resetForm();
   }
 
   return (
@@ -31,7 +34,6 @@ function Login({ handleLogin }) {
         action="#"
         name="sign-form"
         onSubmit={handleSubmit}
-        noValidate
       >
         <input
           className="sign__input"
