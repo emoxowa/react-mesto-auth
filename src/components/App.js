@@ -115,17 +115,16 @@ function App() {
        .catch((err) => console.log(`Error ${err}`));
    }
 
-    function handleAddPlaceSubmit({ name, link }) {
-      api
-        .setCardToServer({ name, link })
-        .then((newCard) => {
-          setCards([newCard, ...cards]);
-          closeAllPopups();
-        })
-        .catch((err) => console.log(`Error ${err}`));
-    }
+  function handleAddPlaceSubmit({ name, link }) {
+    api
+      .setCardToServer({ name, link })
+      .then((newCard) => {
+        setCards([newCard, ...cards]);
+        closeAllPopups();
+      })
+      .catch((err) => console.log(`Error ${err}`));
+  }
   
-
   function handleRegister(email, password) {
     auth
       .register(email, password)
@@ -176,33 +175,33 @@ function App() {
     setIsInfoTooltipOpen(false);
   }
 
-  function signOut() {
+  function onSignOut() {
     setLoggedIn(false);
     setUserData("");
     localStorage.removeItem("token");
     history.push("/sign-in");
   }
   
-function checkToken() {
-  const token = localStorage.getItem("token");
-  if (token) {
-    auth
-      .getContent(token)
-      .then((res) => {
-        if (res) {
-          setLoggedIn(true);
-          setUserData(res.data.email);
-          history.push("/");
-        } else {
-          setDataInfoTool({
-            title: "Что-то пошло не так! Попробуйте ещё раз.",
-            icon: failIcon,
-          });
-          handleInfoTooltipOpen();
-        }
-      })
-      .catch((err) => console.log(`Error ${err}`));
-  }
+  function checkToken() {
+    const token = localStorage.getItem("token");
+    if (token) {
+      auth
+        .getContent(token)
+        .then((res) => {
+          if (res) {
+            setLoggedIn(true);
+            setUserData(res.data.email);
+            history.push("/");
+          } else {
+            setDataInfoTool({
+              title: "Что-то пошло не так! Попробуйте ещё раз.",
+              icon: failIcon,
+            });
+            handleInfoTooltipOpen();
+          }
+        })
+        .catch((err) => console.log(`Error ${err}`));
+    }
   }
 
  useEffect(() => {
@@ -224,7 +223,7 @@ function checkToken() {
   return (
     <div className="page">
       <CurrentUserContext.Provider value={currentUser}>
-        <Header headerEmail={userData} signOut={signOut} />
+        <Header headerEmail={userData} onSignOut={onSignOut} />
         <Switch>
           <ProtectedRoute
             exact
@@ -251,7 +250,6 @@ function checkToken() {
           <Route>
             {loggedIn ? <Redirect to="/" /> : <Redirect to="/sign-in" />}
           </Route>
-
         </Switch>
         <Footer />
 

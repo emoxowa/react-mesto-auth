@@ -1,8 +1,8 @@
-import React from "react";
+import React, {useState} from "react";
 
 function Login({ handleLogin }) {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   function handleChange(evt) {
     if (evt.target.name === "Email") {
@@ -19,14 +19,6 @@ function Login({ handleLogin }) {
 
   function handleSubmit(evt) {
     evt.preventDefault();
-    if (!email) {
-      console.log("Не введен email");
-      return;
-    }
-    if (!password) {
-      console.log("Не введен пароль");
-      return;
-    }
     handleLogin(email, password);
     resetForm();
   }
